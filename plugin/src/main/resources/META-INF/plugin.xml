@@ -7,18 +7,15 @@
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.java</depends>
 
-  <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-       Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
-       Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
   <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
+  This plugin adds an inspection that underlines chains where the RequiredMethod annotation exists on the method
+  and the methods from said annotation are not called.
   ]]></description>
 
   <extensions defaultExtensionNs="com.intellij">
     <localInspection language="JAVA"
                      bundle="messages.InspectionBundle"
-                     key="inspection.comparing.string.references.display.name"
+                     key="inspection.required.method.name"
                      groupPath="Java"
                      groupBundle="messages.InspectionsBundle"
                      groupKey="group.names.probable.bugs"
