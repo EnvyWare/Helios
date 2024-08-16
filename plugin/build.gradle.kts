@@ -9,11 +9,16 @@ version = "1.0-SNAPSHOT"
 
 repositories {
   mavenCentral()
+  maven("https://maven.envyware.co.uk/releases")
 }
 
 intellij {
   version.set("2023.3.7")
   plugins.set(listOf("com.intellij.java"))
+}
+
+dependencies {
+  implementation("uk.co.envyware:helios:1.0-SNAPSHOT")
 }
 
 tasks {
