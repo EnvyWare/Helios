@@ -24,6 +24,6 @@
                      groupKey="group.names.probable.bugs"
                      enabledByDefault="true"
                      level="WARNING"
-                     implementationClass="uk.co.envyware.idea.helios.AnnotationCheckInspection"/>
+                     implementationClass="uk.co.envyware.helios.idea.plugin.AnnotationCheckInspection"/>
   </extensions>
 </idea-plugin>
