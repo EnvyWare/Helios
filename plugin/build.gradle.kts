@@ -1,7 +1,10 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
   id("org.jetbrains.intellij") version "1.17.3"
+  id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "uk.co.envyware.helios.idea"
@@ -28,6 +31,12 @@ tasks {
   }
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
+  }
+
+  withType<ShadowJar> {
+    archiveBaseName.set("Helios-Plugin-" + project.version)
+    archiveVersion.set("")
+    archiveClassifier.set("")
   }
 
   patchPluginXml {
