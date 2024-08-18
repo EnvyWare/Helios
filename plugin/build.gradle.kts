@@ -21,7 +21,7 @@ intellij {
 }
 
 dependencies {
-  implementation("uk.co.envyware:helios:1.0-SNAPSHOT")
+  implementation("uk.co.envyware:helios:1.2-SNAPSHOT")
 }
 
 tasks {
