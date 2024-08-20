@@ -71,6 +71,9 @@ public class MainClass {
 
 ## Getting Started
 
+Note: if you want the syntax highlighting to work you need to install the IntelliJ plugin.
+
+
 You can use the Helios library by adding the following to your build.gradle file repositories block:
 
 ```groovy
