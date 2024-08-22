@@ -21,8 +21,13 @@ public class DuplicateAllowedMethodInspection extends AbstractBaseJavaLocalInspe
     @Override
     public @Nullable ProblemDescriptor[] checkMethod(@NotNull PsiMethod method, @NotNull InspectionManager manager, boolean isOnTheFly) {
         List<ProblemDescriptor> problems = new ArrayList<>();
+        var body = method.getBody();
 
-        for (var statement : method.getBody().getStatements()) {
+        if (body == null) {
+            return new ProblemDescriptor[0];
+        }
+
+        for (var statement : body.getStatements()) {
             if (!(statement instanceof PsiExpressionStatement expressionStatement)) {
                 continue;
             }
@@ -36,7 +41,13 @@ public class DuplicateAllowedMethodInspection extends AbstractBaseJavaLocalInspe
             Map<String, DuplicateMethod> nonDuplicateMethods = new HashMap<>();
 
             if (this.shouldRunInspection(methodCall)) {
-                nonDuplicateMethods.computeIfAbsent(methodCall.resolveMethod().getName(), key -> new DuplicateMethod(methodCall)).incrementCounter();
+                var resolveMethod = methodCall.resolveMethod();
+
+                if (resolveMethod == null) {
+                    continue;
+                }
+
+                nonDuplicateMethods.computeIfAbsent(resolveMethod.getContainingClass().getName() + "#" + resolveMethod.getName(), key -> new DuplicateMethod(methodCall)).incrementCounter();
             }
 
             var qualifier = methodCall.getMethodExpression().getQualifierExpression();
@@ -45,9 +56,13 @@ public class DuplicateAllowedMethodInspection extends AbstractBaseJavaLocalInspe
                 qualifier = qualifierMethodCall.getMethodExpression().getQualifierExpression();
 
                 if (this.shouldRunInspection(qualifierMethodCall)) {
-                    var methodName = qualifierMethodCall.resolveMethod().getName();
+                    var resolveMethod = qualifierMethodCall.resolveMethod();
 
-                    nonDuplicateMethods.computeIfAbsent(methodName, key -> new DuplicateMethod(qualifierMethodCall)).incrementCounter();
+                    if (resolveMethod == null) {
+                        continue;
+                    }
+
+                    nonDuplicateMethods.computeIfAbsent(resolveMethod.getContainingClass().getName() + "#" + resolveMethod.getName(), key -> new DuplicateMethod(qualifierMethodCall)).incrementCounter();
                 }
             }
 
