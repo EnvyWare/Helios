@@ -16,12 +16,13 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
     @Override
     public @Nullable ProblemDescriptor[] checkMethod(@NotNull PsiMethod method, @NotNull InspectionManager manager, boolean isOnTheFly) {
         var problems = new ArrayList<>(checkAnnotationContents(method, manager, isOnTheFly));
+        var body = method.getBody();
 
-        if (method.getBody() == null) {
+        if (body == null) {
             return problems.toArray(new ProblemDescriptor[0]);
         }
 
-        for (var statement : method.getBody().getStatements()) {
+        for (var statement : body.getStatements()) {
             if (!(statement instanceof PsiExpressionStatement expressionStatement)) {
                 continue;
             }
