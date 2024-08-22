@@ -94,6 +94,10 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
 
             var value = annotation.findAttributeValue("value");
 
+            if (value == null || value.getChildren() == null) {
+                continue;
+            }
+
             for (var child : value.getChildren()) {
                 if (!(child instanceof PsiLiteralExpression literal)) {
                     continue;
