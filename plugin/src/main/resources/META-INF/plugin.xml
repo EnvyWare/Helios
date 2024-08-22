@@ -8,8 +8,12 @@
   <depends>com.intellij.java</depends>
 
   <description><![CDATA[
-  This plugin adds an inspection that underlines chains where the RequiredMethod annotation exists on the method
-  and the methods from said annotation are not called.
+Helios is a developer tool designed to improve the usability of the Builder pattern in Java.
+
+It provides a set of inspections to help developers ensure that their Builder implementations are correct at compile time
+rather than waiting for runtime exceptions.
+
+For more information checkout the project on GitHub: https://github.com/EnvyWare/Helios
   ]]></description>
 
   <extensions defaultExtensionNs="com.intellij">
