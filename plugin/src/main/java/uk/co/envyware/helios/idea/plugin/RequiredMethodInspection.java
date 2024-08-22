@@ -39,7 +39,16 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
             }
 
             var referencedMethod = (PsiMethod) methodReference.resolve();
+
+            if (referencedMethod == null) {
+                continue;
+            }
+
             var targetMethodClass = referencedMethod.getContainingClass();
+
+            if (targetMethodClass == null) {
+                continue;
+            }
 
             for (var annotation : referencedMethod.getAnnotations()) {
                 if (!annotation.getQualifiedName().equals(REQUIRED_METHOD)) {
@@ -47,6 +56,10 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
                 }
 
                 var value = annotation.findAttributeValue("value");
+
+                if (value == null) {
+                    continue;
+                }
 
                 for (var child : value.getChildren()) {
                     if (!(child instanceof PsiLiteralExpression)) {
@@ -94,7 +107,7 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
 
             var value = annotation.findAttributeValue("value");
 
-            if (value == null || value.getChildren() == null) {
+            if (value == null) {
                 continue;
             }
 
@@ -116,13 +129,65 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
     }
 
     private static boolean canFindMethodCallInChain(PsiReferenceExpression expression, PsiMethod targetMethod) {
+        var reference = expression.resolve();
+
+        if (reference instanceof PsiMethod foundMethod && checkMethod(foundMethod, targetMethod)) {
+            return true;
+        }
+
+        if (expression instanceof PsiMethodCallExpression methodCall) {
+            var resolvedMethod = methodCall.resolveMethod();
+
+            if (checkMethod(resolvedMethod, targetMethod)) {
+                return true;
+            }
+        }
+
         var qualifier = expression.getQualifierExpression();
 
         while (qualifier instanceof PsiMethodCallExpression methodCall) {
             qualifier = methodCall.getMethodExpression().getQualifierExpression();
             var resolvedMethod = methodCall.resolveMethod();
 
-            if (resolvedMethod != null && resolvedMethod.getName().equals(targetMethod.getName())) {
+            if (checkMethod(resolvedMethod, targetMethod)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean checkMethod(PsiMethod method, PsiMethod targetMethod) {
+        if (method == null) {
+            return false;
+        }
+
+        if (method.getName().equals(targetMethod.getName())) {
+            return true;
+        }
+
+        var body = method.getBody();
+
+        if (body == null) {
+            return false;
+        }
+
+        for (var statement : body.getStatements()) {
+            for (var child : statement.getChildren()) {
+                if (!(child instanceof PsiMethodCallExpression expressionStatement)) {
+                    continue;
+                }
+
+                if (checkMethod(expressionStatement.resolveMethod(), targetMethod)) {
+                    return true;
+                }
+            }
+
+            if (!(statement instanceof PsiMethodCallExpression expressionStatement)) {
+                continue;
+            }
+
+            if (checkMethod(expressionStatement.resolveMethod(), targetMethod)) {
                 return true;
             }
         }
