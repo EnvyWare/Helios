@@ -2,6 +2,9 @@
 
 Helios is a developer tool designed to improve the usability of the Builder pattern in Java.
 
+## Installing
+You can use the features listed below by installing the plugin from the IntelliJ marketplace which you can find [here](https://plugins.jetbrains.com/plugin/25124-helios).
+
 ## Features
 
 ### RequiredMethod annotation
@@ -67,6 +70,9 @@ public class MainClass {
 ```
 
 ## Getting Started
+
+Note: if you want the syntax highlighting to work you need to install the IntelliJ plugin.
+
 
 You can use the Helios library by adding the following to your build.gradle file repositories block:
 
