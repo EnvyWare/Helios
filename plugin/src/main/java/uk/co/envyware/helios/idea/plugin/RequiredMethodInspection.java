@@ -8,6 +8,7 @@ import uk.co.envyware.helios.RequiredMethod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionTool {
 
@@ -23,23 +24,13 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
         }
 
         for (var statement : body.getStatements()) {
-            if (!(statement instanceof PsiExpressionStatement expressionStatement)) {
+            var methodCallExpression = checkStatement(statement, this::shouldRunInspection);
+
+            if (methodCallExpression == null) {
                 continue;
             }
 
-            var expression = expressionStatement.getExpression();
-
-            if(!(expression instanceof PsiMethodCallExpression methodCall)) {
-                continue;
-            }
-
-            var methodReference = methodCall.getMethodExpression();
-
-            if (!this.shouldRunInspection(methodReference)) {
-                continue;
-            }
-
-            var referencedMethod = (PsiMethod) methodReference.resolve();
+            var referencedMethod = methodCallExpression.resolveMethod();
 
             if (referencedMethod == null) {
                 continue;
@@ -71,8 +62,8 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
                     var parsedTargetMethods = targetMethodClass.findMethodsByName(targetMethod, true);
 
                     for (var parsedTargetMethod : parsedTargetMethods) {
-                        if (!canFindMethodCallInChain(methodCall.getMethodExpression(), parsedTargetMethod)) {
-                            problems.add(manager.createProblemDescriptor(methodCall.getOriginalElement(), "Missing required method call '" + parsedTargetMethod.getName() + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.GENERIC_ERROR));
+                        if (!canFindMethodCallInChain(methodCallExpression, parsedTargetMethod)) {
+                            problems.add(manager.createProblemDescriptor(statement, "Missing required method call '" + parsedTargetMethod.getName() + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.GENERIC_ERROR));
                         }
                     }
                 }
@@ -82,9 +73,7 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
         return problems.toArray(new ProblemDescriptor[0]);
     }
 
-    private boolean shouldRunInspection(PsiReferenceExpression reference) {
-        var method = (PsiMethod) reference.resolve();
-
+    private boolean shouldRunInspection(PsiMethod method) {
         if (method == null) {
             return false;
         }
@@ -129,22 +118,14 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
         return problems;
     }
 
-    private static boolean canFindMethodCallInChain(PsiReferenceExpression expression, PsiMethod targetMethod) {
-        var reference = expression.resolve();
+    private static boolean canFindMethodCallInChain(PsiMethodCallExpression expression, PsiMethod targetMethod) {
+        var reference = expression.resolveMethod();
 
-        if (reference instanceof PsiMethod foundMethod && checkMethod(foundMethod, targetMethod)) {
+        if (checkMethod(reference, targetMethod)) {
             return true;
         }
 
-        if (expression instanceof PsiMethodCallExpression methodCall) {
-            var resolvedMethod = methodCall.resolveMethod();
-
-            if (checkMethod(resolvedMethod, targetMethod)) {
-                return true;
-            }
-        }
-
-        var qualifier = expression.getQualifierExpression();
+        var qualifier = expression.getMethodExpression().getQualifier();
 
         while (qualifier instanceof PsiMethodCallExpression methodCall) {
             qualifier = methodCall.getMethodExpression().getQualifierExpression();
@@ -174,25 +155,39 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
         }
 
         for (var statement : body.getStatements()) {
-            for (var child : statement.getChildren()) {
-                if (!(child instanceof PsiMethodCallExpression expressionStatement)) {
-                    continue;
-                }
-
-                if (checkMethod(expressionStatement.resolveMethod(), targetMethod)) {
-                    return true;
-                }
-            }
-
-            if (!(statement instanceof PsiMethodCallExpression expressionStatement)) {
-                continue;
-            }
-
-            if (checkMethod(expressionStatement.resolveMethod(), targetMethod)) {
+            if (checkStatement(statement, psiMethod -> checkMethod(psiMethod, targetMethod)) != null) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static PsiMethodCallExpression checkStatement(PsiElement statement, Predicate<PsiMethod> methodTest) {
+        for (var child : statement.getChildren()) {
+            var recursiveCheck = checkStatement(child, methodTest);
+
+            if (recursiveCheck != null) {
+                return recursiveCheck;
+            }
+
+            if (!(child instanceof PsiMethodCallExpression expressionStatement)) {
+                continue;
+            }
+
+            if (methodTest.test(expressionStatement.resolveMethod())) {
+                return expressionStatement;
+            }
+        }
+
+        if (!(statement instanceof PsiMethodCallExpression expressionStatement)) {
+            return null;
+        }
+
+        if (methodTest.test(expressionStatement.resolveMethod())) {
+            return expressionStatement;
+        }
+
+        return null;
     }
 }
