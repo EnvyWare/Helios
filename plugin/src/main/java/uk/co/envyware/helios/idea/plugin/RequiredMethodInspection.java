@@ -42,29 +42,23 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
                 continue;
             }
 
-            for (var annotation : referencedMethod.getAnnotations()) {
-                if (!annotation.getQualifiedName().equals(REQUIRED_METHOD)) {
+            var requiredMethodValue = this.findRequiredMethodAnnotation(referencedMethod);
+
+            if (requiredMethodValue == null) {
+                continue;
+            }
+
+            for (var child : requiredMethodValue.getChildren()) {
+                if (!(child instanceof PsiLiteralExpression)) {
                     continue;
                 }
 
-                var value = annotation.findAttributeValue("value");
+                var targetMethod = child.getText().replace("\"", "");
+                var parsedTargetMethods = targetMethodClass.findMethodsByName(targetMethod, true);
 
-                if (value == null) {
-                    continue;
-                }
-
-                for (var child : value.getChildren()) {
-                    if (!(child instanceof PsiLiteralExpression)) {
-                        continue;
-                    }
-
-                    var targetMethod = child.getText().replace("\"", "");
-                    var parsedTargetMethods = targetMethodClass.findMethodsByName(targetMethod, true);
-
-                    for (var parsedTargetMethod : parsedTargetMethods) {
-                        if (!canFindMethodCallInChain(methodCallExpression, parsedTargetMethod)) {
-                            problems.add(manager.createProblemDescriptor(statement, "Missing required method call '" + parsedTargetMethod.getName() + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.GENERIC_ERROR));
-                        }
+                for (var parsedTargetMethod : parsedTargetMethods) {
+                    if (!canFindMethodCallInChain(methodCallExpression, parsedTargetMethod)) {
+                        problems.add(manager.createProblemDescriptor(statement, "Missing required method call '" + parsedTargetMethod.getName() + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.GENERIC_ERROR));
                     }
                 }
             }
@@ -88,7 +82,34 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
     }
 
     private List<ProblemDescriptor> checkAnnotationContents(PsiMethod method, InspectionManager manager, boolean isOnTheFly) {
+        var requiredMethodValue = this.findRequiredMethodAnnotation(method);
+
+        if (requiredMethodValue == null) {
+            return List.of();
+        }
+
         List<ProblemDescriptor> problems = new ArrayList<>();
+
+        for (var child : requiredMethodValue.getChildren()) {
+            if (!(child instanceof PsiLiteralExpression literal)) {
+                continue;
+            }
+
+            var text = literal.getText().replace("\"", "");
+            var targetMethod = method.getContainingClass().findMethodsByName(text, true);
+
+            if (targetMethod.length == 0) {
+                problems.add(manager.createProblemDescriptor(literal, "Cannot find method '" + text + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.ERROR));
+            }
+        }
+
+        return problems;
+    }
+
+    private PsiAnnotationMemberValue findRequiredMethodAnnotation(PsiMethod method) {
+        if (method == null) {
+            return null;
+        }
 
         for (var annotation : method.getAnnotations()) {
             if (!annotation.getQualifiedName().equals(REQUIRED_METHOD)) {
@@ -101,21 +122,10 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
                 continue;
             }
 
-            for (var child : value.getChildren()) {
-                if (!(child instanceof PsiLiteralExpression literal)) {
-                    continue;
-                }
-
-                var text = literal.getText().replace("\"", "");
-                var targetMethod = method.getContainingClass().findMethodsByName(text, true);
-
-                if (targetMethod.length == 0) {
-                    problems.add(manager.createProblemDescriptor(literal, "Cannot find method '" + text + "'", isOnTheFly, new LocalQuickFix[0], ProblemHighlightType.ERROR));
-                }
-            }
+            return value;
         }
 
-        return problems;
+        return null;
     }
 
     private static boolean canFindMethodCallInChain(PsiMethodCallExpression expression, PsiMethod targetMethod) {
@@ -144,7 +154,7 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
             return false;
         }
 
-        if (method.getName().equals(targetMethod.getName())) {
+        if (method.getContainingClass().getName().equals(targetMethod.getContainingClass().getName()) && method.getName().equals(targetMethod.getName())) {
             return true;
         }
 
