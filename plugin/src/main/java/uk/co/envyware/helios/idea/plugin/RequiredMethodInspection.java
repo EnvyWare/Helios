@@ -15,6 +15,17 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
     private static final String REQUIRED_METHOD = RequiredMethod.class.getCanonicalName();
 
     @Override
+    public ProblemDescriptor @Nullable [] checkClass(@NotNull PsiClass aClass, @NotNull InspectionManager manager, boolean isOnTheFly) {
+        List<ProblemDescriptor> problems = new ArrayList<>();
+
+        for (var initializer : aClass.getInitializers()) {
+            problems.addAll(this.findProblemsInCodeBlock(initializer.getBody(), manager, isOnTheFly));
+        }
+
+        return problems.toArray(new ProblemDescriptor[0]);
+    }
+
+    @Override
     public @Nullable ProblemDescriptor[] checkMethod(@NotNull PsiMethod method, @NotNull InspectionManager manager, boolean isOnTheFly) {
         var problems = new ArrayList<>(checkAnnotationContents(method, manager, isOnTheFly));
         var body = method.getBody();
@@ -23,7 +34,19 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
             return problems.toArray(new ProblemDescriptor[0]);
         }
 
-        for (var statement : body.getStatements()) {
+        problems.addAll(this.findProblemsInCodeBlock(body, manager, isOnTheFly));
+
+        return problems.toArray(new ProblemDescriptor[0]);
+    }
+
+    private List<ProblemDescriptor> findProblemsInCodeBlock(PsiCodeBlock codeBlock, InspectionManager manager, boolean isOnTheFly) {
+        if (codeBlock == null) {
+            return List.of();
+        }
+
+        List<ProblemDescriptor> problems = new ArrayList<>();
+
+        for (var statement : codeBlock.getStatements()) {
             var methodCallExpression = checkStatement(statement, this::shouldRunInspection);
 
             if (methodCallExpression == null) {
@@ -64,7 +87,7 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
             }
         }
 
-        return problems.toArray(new ProblemDescriptor[0]);
+        return problems;
     }
 
     private boolean shouldRunInspection(PsiMethod method) {
