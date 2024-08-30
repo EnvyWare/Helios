@@ -2,6 +2,7 @@ package uk.co.envyware.helios.idea.plugin;
 
 import com.intellij.codeInspection.*;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.tree.ChildRole;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import uk.co.envyware.helios.RequiredMethod;
@@ -184,7 +185,7 @@ public class RequiredMethodInspection extends AbstractBaseJavaLocalInspectionToo
         var body = method.getBody();
 
         if (body == null) {
-            return false;
+            return true;
         }
 
         for (var statement : body.getStatements()) {
