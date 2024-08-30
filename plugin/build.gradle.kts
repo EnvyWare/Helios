@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "uk.co.envyware.helios.idea"
-version = "1.3-SNAPSHOT"
+version = "1.4-SNAPSHOT"
 
 repositories {
   mavenCentral()
@@ -21,7 +21,7 @@ intellij {
 }
 
 dependencies {
-  implementation("uk.co.envyware:helios:1.3-SNAPSHOT")
+  implementation("uk.co.envyware:helios:1.4-SNAPSHOT")
 }
 
 tasks {
