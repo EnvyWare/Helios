@@ -88,6 +88,6 @@ And then adding the following to your dependencies block:
 
 ```groovy
 dependencies {
-    implementation 'uk.co.envyware:helios:1.1-SNAPSHOT'
+    implementation 'uk.co.envyware:helios:1.4-SNAPSHOT'
 }
 ```
